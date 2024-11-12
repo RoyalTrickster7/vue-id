@@ -1,15 +1,11 @@
-<!-- src/components/IDCard.vue -->
 <template>
   <div class="id-card-container">
-    <!-- Tarjeta de identificación en la parte superior -->
     <div class="id-card">
       <div class="header">
-        <!-- Usamos una ruta absoluta para el logo directamente en el HTML -->
         <img class="logo" src="/src/assets/logo.png" alt="School Logo" />
         <h2>{{ school }}</h2>
       </div>
       <div class="profile">
-        <!-- Muestra la foto cargada por el usuario o una imagen de marcador de posición -->
         <div class="photo">
           <img :src="photoUrl" alt="Student Photo" />
         </div>
@@ -66,13 +62,26 @@
       <!-- Botón de carga para la foto -->
       <div class="form-group">
         <label for="photo">Upload Photo:</label>
-        <input type="file" id="photo" @change="onFileChange" />
+        <input type="file" id="photo" @change="openCropper" />
       </div>
     </form>
+
+    <!-- Modal para Cropper -->
+    <div v-if="showCropper" class="modal">
+      <div class="modal-content">
+        <h3>Adjust and Crop your Photo</h3>
+        <img ref="cropperImage" :src="photoUrl" alt="Crop Image" />
+        <button @click="cropImage">Crop & Save</button>
+        <button @click="closeCropper">Cancel</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
+
 export default {
   name: 'IDCard',
   data() {
@@ -84,15 +93,43 @@ export default {
       dob: '',
       address: '',
       phone: '',
-      photoUrl: 'https://via.placeholder.com/80' // Imagen temporal
+      photoUrl: 'https://via.placeholder.com/80',
+      showCropper: false,
+      cropper: null
     };
   },
   methods: {
-    onFileChange(event) {
+    openCropper(event) {
       const file = event.target.files[0];
       if (file) {
         this.photoUrl = URL.createObjectURL(file);
+        this.showCropper = true;
+        this.$nextTick(() => {
+          this.cropper = new Cropper(this.$refs.cropperImage, {
+            aspectRatio: 1,
+            viewMode: 1
+          });
+        });
       }
+    },
+    cropImage() {
+      if (this.cropper) {
+        const canvas = this.cropper.getCroppedCanvas({
+          width: 80,
+          height: 80
+        });
+        this.photoUrl = canvas.toDataURL('image/png');
+        this.cropper.destroy();
+        this.cropper = null;
+        this.showCropper = false;
+      }
+    },
+    closeCropper() {
+      if (this.cropper) {
+        this.cropper.destroy();
+        this.cropper = null;
+      }
+      this.showCropper = false;
     }
   }
 };
@@ -184,5 +221,33 @@ input {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+/* Estilos del modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal-content img {
+  max-width: 100%;
+  height: auto;
 }
 </style>
