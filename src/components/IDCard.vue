@@ -18,8 +18,15 @@
           <p>Phone: {{ phone }}</p>
         </div>
       </div>
-      <div class="barcode">[Barcode]</div>
-      <p class="signature">Principal</p>
+      <!-- Canvas para el código de barras centrado -->
+      <div class="barcode-wrapper">
+        <canvas ref="barcode" class="barcode"></canvas>
+      </div>
+      <!-- Línea de firma -->
+      <div class="signature">
+        <div class="signature-line"></div>
+        <p>Principal</p>
+      </div>
     </div>
 
     <!-- Formulario interactivo en la parte inferior -->
@@ -31,7 +38,7 @@
 
       <div class="form-group">
         <label for="id">ID:</label>
-        <input v-model="id" id="id" type="text" placeholder="Enter ID" />
+        <input v-model="id" id="id" type="text" placeholder="Enter ID" maxlength="7" @input="generateBarcode" />
       </div>
 
       <div class="form-group">
@@ -80,6 +87,7 @@
 
 <script>
 import Cropper from 'cropperjs';
+import JsBarcode from 'jsbarcode';
 import 'cropperjs/dist/cropper.css';
 
 export default {
@@ -130,7 +138,24 @@ export default {
         this.cropper = null;
       }
       this.showCropper = false;
+    },
+    generateBarcode() {
+      JsBarcode(this.$refs.barcode, this.id || '0000000', {
+        format: 'CODE128',
+        lineColor: '#000',
+        width: 2,
+        height: 30,
+        displayValue: false
+      });
     }
+  },
+  watch: {
+    id(newId) {
+      this.generateBarcode(newId);
+    }
+  },
+  mounted() {
+    this.generateBarcode();
   }
 };
 </script>
@@ -184,19 +209,24 @@ export default {
   color: #333;
 }
 
-.barcode {
+/* Centramos el código de barras */
+.barcode-wrapper {
+  display: flex;
+  justify-content: center;
   margin-top: 15px;
-  text-align: center;
-  font-size: 12px;
-  background-color: #e0e0e0;
-  height: 30px;
 }
 
 .signature {
-  text-align: right;
+  text-align: center;
   font-style: italic;
   margin-top: 10px;
-  color: #333;
+}
+
+.signature-line {
+  width: 60%;
+  height: 1px;
+  background-color: #000;
+  margin: 0 auto 5px auto;
 }
 
 .id-form {
@@ -223,7 +253,7 @@ input {
   border-radius: 4px;
 }
 
-/* Estilos del modal */
+/* Modal styling */
 .modal {
   position: fixed;
   top: 0;
